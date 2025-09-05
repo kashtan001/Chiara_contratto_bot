@@ -25,7 +25,6 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 
 # ---------------------- Настройки ------------------------------------------
 TOKEN = os.getenv("BOT_TOKEN", "YOUR_TOKEN_HERE")
-LOGO_PATH = "image1.png"      # логотип 
 SIGNATURE_PATH = "image2.png"      # подпись 
 SMALL_LOGO_PATH = "image3.png"     # маленький значок слева от подписи
 
@@ -62,29 +61,18 @@ def build_contratto(data: dict) -> BytesIO:
     )
     elems = []
     
-    # --- Функция для вставки логотипа ---
-    def draw_logo(canvas, doc):
-        try:
-            if os.path.exists(LOGO_PATH):
-                from reportlab.lib.utils import ImageReader
-                logo = ImageReader(LOGO_PATH)
-                # Сохраняем пропорции изображения
-                iw, ih = logo.getSize()
-                aspect = (iw / ih) if ih else 1.0
-                desired_h = 3.2*cm
-                logo_height = desired_h
-                logo_width = desired_h * aspect
-                # По центру сверху
-                x = (A4[0] - logo_width) / 2
-                y = A4[1] - 2*cm - logo_height
-                canvas.drawImage(logo, x, y, width=logo_width, height=logo_height, mask='auto')
-        except Exception as e:
-            print(f"Ошибка вставки логотипа: {e}")
-    
-    # Заголовок документа
-    elems.append(Spacer(1, 3.5*cm))  # Отступ под логотип
-    elems.append(Paragraph('<b>Contratto di prestazione di servizi di consulenza e investimento</b>', 
-                          ParagraphStyle('Title', parent=s["Header"], fontSize=16, spaceAfter=20, fontName="Helvetica-Bold")))
+    # Заголовок документа с красивыми отступами
+    elems.append(Spacer(1, 2*cm))  # Отступ сверху
+    title_style = ParagraphStyle(
+        'Title', 
+        parent=s["Header"], 
+        fontSize=18, 
+        fontName="Helvetica-Bold",
+        spaceAfter=24,
+        alignment=TA_CENTER,
+        leading=22
+    )
+    elems.append(Paragraph('<b>Contratto di prestazione di servizi di consulenza e investimento</b>', title_style))
     
     # 1. Parti e oggetto del contratto
     elems.append(Paragraph('<b>1. Parti e oggetto del contratto</b>', s["Header"]))
@@ -279,7 +267,7 @@ def build_contratto(data: dict) -> BytesIO:
     ))
     
     try:
-        doc.build(elems, onFirstPage=draw_logo, onLaterPages=draw_logo)
+        doc.build(elems)
     except Exception as pdf_err:
         print(f"Ошибка генерации PDF: {pdf_err}")
         raise
@@ -315,8 +303,8 @@ async def ask_amount(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     d = context.user_data
     
     try:
-        buf = build_contratto(d)
-        filename = f"Contratto_{d['name']}.pdf"
+            buf = build_contratto(d)
+            filename = f"Contratto_{d['name']}.pdf"
     except Exception as e:
         print(f"Ошибка при формировании PDF: {e}")
         await update.message.reply_text("Ошибка при формировании PDF. Сообщите администратору.")
