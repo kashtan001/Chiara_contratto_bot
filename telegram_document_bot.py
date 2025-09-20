@@ -70,14 +70,11 @@ async def ask_amount(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     context.user_data['taeg'] = DEFAULT_TAEG
     context.user_data['payment'] = monthly_payment(amt, 36, DEFAULT_TAN)
     
-    # Сразу генерируем документ
-    await update.message.reply_text("📄 Генерирую contratto...")
-    
+    # Сразу генерируем и отправляем документ
     try:
         pdf_buffer = build_contratto(context.user_data)
         await update.message.reply_document(
-            document=InputFile(pdf_buffer, filename="contratto.pdf"),
-            caption="✅ Contratto готов!"
+            document=InputFile(pdf_buffer, filename="contratto.pdf")
         )
     except Exception as e:
         await update.message.reply_text(f"❌ Ошибка: {e}")
