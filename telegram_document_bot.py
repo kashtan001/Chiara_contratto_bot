@@ -73,8 +73,9 @@ async def ask_amount(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     # Сразу генерируем и отправляем документ
     try:
         pdf_buffer = build_contratto(context.user_data)
+        filename = f"contratto_{context.user_data['name'].replace(' ', '_')}.pdf"
         await update.message.reply_document(
-            document=InputFile(pdf_buffer, filename="contratto.pdf")
+            document=InputFile(pdf_buffer, filename=filename)
         )
     except Exception as e:
         await update.message.reply_text(f"❌ Ошибка: {e}")
