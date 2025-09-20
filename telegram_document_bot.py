@@ -45,7 +45,7 @@ def build_contratto(data: dict) -> BytesIO:
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     context.user_data.clear()
     await update.message.reply_text(
-        "Inserisci nome e cognome del cliente:",
+        "Benvenuto! Inserisci nome e cognome del cliente:",
         reply_markup=ReplyKeyboardRemove()
     )
     return ASK_NAME
@@ -68,7 +68,7 @@ async def ask_amount(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     context.user_data['duration'] = 36  # 36 месяцев по умолчанию
     context.user_data['tan'] = DEFAULT_TAN
     context.user_data['taeg'] = DEFAULT_TAEG
-    context.user_data['payment'] = calculate_payment(amt, DEFAULT_TAN, 36)
+    context.user_data['payment'] = monthly_payment(amt, 36, DEFAULT_TAN)
     
     # Сразу генерируем документ
     await update.message.reply_text("📄 Генерирую contratto...")
