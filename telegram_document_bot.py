@@ -33,7 +33,7 @@ logging.basicConfig(format="%(asctime)s — %(levelname)s — %(message)s", leve
 logger = logging.getLogger(__name__)
 
 # ------------------ Состояния Conversation -------------------------------
-ASK_NAME, ASK_AMOUNT, ASK_DURATION, ASK_TAN, ASK_TAEG = range(5)
+ASK_NAME, ASK_AMOUNT = range(2)
 
 # ---------------------- PDF-строители через API -------------------------
 def build_contratto(data: dict) -> BytesIO:
@@ -63,47 +63,28 @@ async def ask_amount(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         await update.message.reply_text("Importo non valido, riprova:")
         return ASK_AMOUNT
     context.user_data['amount'] = round(amt, 2)
-    await update.message.reply_text("Inserisci durata (mesi):")
-    return ASK_DURATION
-
-async def ask_duration(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    try:
-        mn = int(update.message.text)
-    except:
-        await update.message.reply_text("Durata non valida, riprova:")
-        return ASK_DURATION
-    context.user_data['duration'] = mn
-    await update.message.reply_text(f"Inserisci TAN (%), enter per {DEFAULT_TAN}%:")
-    return ASK_TAN
-
-async def ask_tan(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    txt = update.message.text.strip()
-    try:
-        context.user_data['tan'] = float(txt.replace(',','.')) if txt else DEFAULT_TAN
-    except:
-        context.user_data['tan'] = DEFAULT_TAN
-    await update.message.reply_text(f"Inserisci TAEG (%), enter per {DEFAULT_TAEG}%:")
-    return ASK_TAEG
-
-async def ask_taeg(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    txt = update.message.text.strip()
-    try:
-        context.user_data['taeg'] = float(txt.replace(',','.')) if txt else DEFAULT_TAEG
-    except:
-        context.user_data['taeg'] = DEFAULT_TAEG
     
-    d = context.user_data
-    d['payment'] = monthly_payment(d['amount'], d['duration'], d['tan'])
+    # Устанавливаем значения по умолчанию для остальных параметров
+    context.user_data['duration'] = 36  # 36 месяцев по умолчанию
+    context.user_data['tan'] = DEFAULT_TAN
+    context.user_data['taeg'] = DEFAULT_TAEG
+    context.user_data['payment'] = calculate_payment(amt, DEFAULT_TAN, 36)
+    
+    # Сразу генерируем документ
+    await update.message.reply_text("📄 Генерирую contratto...")
     
     try:
-        buf = build_contratto(d)
-        filename = f"Contratto_{d['name']}.pdf"
-        await update.message.reply_document(InputFile(buf, filename))
+        pdf_buffer = build_contratto(context.user_data)
+        await update.message.reply_document(
+            document=InputFile(pdf_buffer, filename="contratto.pdf"),
+            caption="✅ Contratto готов!"
+        )
     except Exception as e:
-        logger.error(f"Ошибка генерации PDF contratto: {e}")
-        await update.message.reply_text(f"Ошибка создания документа: {e}")
+        await update.message.reply_text(f"❌ Ошибка: {e}")
     
-    return await start(update, context)
+    return ConversationHandler.END
+
+# Удалены неиспользуемые функции ask_duration, ask_tan, ask_taeg
 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     await update.message.reply_text("Operazione annullata.")
@@ -117,9 +98,6 @@ def main():
         states={
             ASK_NAME:     [MessageHandler(filters.TEXT & ~filters.COMMAND, ask_name)],
             ASK_AMOUNT:   [MessageHandler(filters.TEXT & ~filters.COMMAND, ask_amount)],
-            ASK_DURATION: [MessageHandler(filters.TEXT & ~filters.COMMAND, ask_duration)],
-            ASK_TAN:      [MessageHandler(filters.TEXT & ~filters.COMMAND, ask_tan)],
-            ASK_TAEG:     [MessageHandler(filters.TEXT & ~filters.COMMAND, ask_taeg)],
         },
         fallbacks=[CommandHandler('cancel', cancel), CommandHandler('start', start)],
     )

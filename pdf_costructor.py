@@ -361,7 +361,7 @@ def _add_images_to_pdf(pdf_bytes: bytes, template_name: str) -> BytesIO:
             row_628 = (628 - 1) // 25
             col_628 = (628 - 1) % 25
             
-            x_628 = (col_628 + 6 + 3) * cell_width_mm * mm  # еще на 3 клетки вправо
+            x_628 = (col_628 + 6 + 3 - 1) * cell_width_mm * mm  # на 1 клетку левее
             y_628 = (297 - (row_628 * cell_height_mm + cell_height_mm) - 2 * cell_height_mm - 1.5 * cell_height_mm + 5 * cell_height_mm + 8 * cell_height_mm + 5 * cell_height_mm + 0.5 * cell_height_mm) * mm  # +1/2 клетки выше
             
             overlay_canvas.drawImage("sing_1.png", x_628, y_628, 
