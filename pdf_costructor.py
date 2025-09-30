@@ -29,7 +29,7 @@ def monthly_payment(amount: float, months: int, annual_rate: float) -> float:
     return round(num / den, 2)
 
 
-def generate__pdf(data: dict) -> BytesIO:
+def generate_contratto_pdf(data: dict) -> BytesIO:
     """
     API функция для генерации PDF договора
     
@@ -50,8 +50,8 @@ def generate__pdf(data: dict) -> BytesIO:
     if 'payment' not in data:
         data['payment'] = monthly_payment(data['amount'], data['duration'], data['tan'])
     
-    html = fix_html_layout('')
-    return _generate_pdf_with_images(html, '', data)
+    html = fix_html_layout('contratto')
+    return _generate_pdf_with_images(html, 'contratto', data)
 
 
 def generate_garanzia_pdf(name: str) -> BytesIO:
@@ -102,16 +102,16 @@ def _generate_pdf_with_images(html: str, template_name: str, data: dict) -> Byte
         from PyPDF2 import PdfReader, PdfWriter
         from PIL import Image
         
-        # Заменяем XXX на реальные данные для , carta и garanzia
-        if template_name in ['', 'carta', 'garanzia']:
+        # Заменяем XXX на реальные данные для contratto, carta и garanzia
+        if template_name in ['contratto', 'carta', 'garanzia']:
             replacements = []
-            if template_name == '':
+            if template_name == 'contratto':
                 replacements = [
                     ('XXX', data['name']),  # имя клиента (первое)
                     ('ХХХ', format_money(data['amount'])),  # сумма кредита (кириллическое ХХХ)
                     ('XXX', f"{data['tan']:.2f}%"),  # TAN
                     ('XXX', f"{data['taeg']:.2f}%"),  # TAEG  
-                    ('XXX', f"{data['duration']} mes"),  # срок
+                    ('XXX', f"{data['duration']} mesi"),  # срок
                     ('XXX', format_money(data['payment'])),  # платеж
                     ('11/06/2025', format_date()),  # дата
                     ('XXX', data['name']),  # имя в подписи
@@ -121,7 +121,7 @@ def _generate_pdf_with_images(html: str, template_name: str, data: dict) -> Byte
                     ('XXX', data['name']),  # имя клиента
                     ('XXX', format_money(data['amount'])),  # сумма кредита
                     ('XXX', f"{data['tan']:.2f}%"),  # TAN
-                    ('XXX', f"{data['duration']} mes"),  # срок
+                    ('XXX', f"{data['duration']} mesi"),  # срок
                     ('XXX', format_money(data['payment'])),  # платеж
                 ]
             elif template_name == 'garanzia':
@@ -298,7 +298,7 @@ def _add_images_to_pdf(pdf_bytes: bytes, template_name: str) -> BytesIO:
             overlay_canvas.save()
             print("🖼️ Добавлены изображения для carta через ReportLab API")
         
-        elif template_name == '':
+        elif template_name == 'contratto':
             # Страница 1 - добавляем company.png и logo.png
             img = Image.open("company.png")
             img_width_mm = img.width * 0.264583
@@ -398,7 +398,7 @@ def _add_images_to_pdf(pdf_bytes: bytes, template_name: str) -> BytesIO:
             overlay_canvas.drawString(x_page_num-2, y_page_num-2, "2")
             
             overlay_canvas.save()
-            print("🖼️ Добавлены изображения для  через ReportLab API")
+            print("🖼️ Добавлены изображения для contratto через ReportLab API")
         
         # Объединяем PDF с overlay
         overlay_buffer.seek(0)
@@ -429,7 +429,7 @@ def _add_images_to_pdf(pdf_bytes: bytes, template_name: str) -> BytesIO:
         return buf
 
 
-def fix_html_layout(template_name=''):
+def fix_html_layout(template_name='contratto'):
     """Исправляем HTML для корректного отображения"""
     
     # Читаем оригинальный HTML
@@ -630,7 +630,7 @@ def fix_html_layout(template_name=''):
     </style>
     """
     else:
-        # Для  и carta - 2 СТРАНИЦЫ
+        # Для contratto и carta - 2 СТРАНИЦЫ
         css_fixes = """
     <style>
     @page {
@@ -824,7 +824,7 @@ def fix_html_layout(template_name=''):
     import re
     
     # Очистка HTML в зависимости от шаблона
-    if template_name == '':
+    if template_name == 'contratto':
         # 1. ПОЛНОСТЬЮ убираем блок с 3 изображениями между разделами
         middle_images_pattern = r'<p class="c3"><span style="overflow: hidden[^>]*><img alt="" src="images/image1\.png"[^>]*></span><span style="overflow: hidden[^>]*><img alt="" src="images/image2\.png"[^>]*></span><span style="overflow: hidden[^>]*><img alt="" src="images/image4\.png"[^>]*></span></p>'
         html = re.sub(middle_images_pattern, '', html)
@@ -892,7 +892,7 @@ def fix_html_layout(template_name=''):
         print("🗑️ Убраны пустые элементы в конце документа для строгого контроля 1 страницы")
 
     
-    # Общая очистка ТОЛЬКО для  и carta
+    # Общая очистка ТОЛЬКО для contratto и carta
     if template_name != 'garanzia':
         # Убираем лишние высоты из таблиц
         html = html.replace('class="c5"', 'class="c5" style="height: auto !important;"')
